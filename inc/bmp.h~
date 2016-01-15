@@ -1,0 +1,90 @@
+#ifndef __BMP_H
+#define __BMP_H
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+
+#pragma pack(2)				//由于所有结构体的最小单位是WORD, 所以采用2字节对其(WORD对其)
+
+
+#define BYTE  unsigned char
+#define WORD  unsigned short int
+#define DWORD unsigned int
+#define LONG  long
+
+#define BMPFILEHEADER_SIZE 14
+#define BMPINFOHEADER_SIZE 56
+
+//位图文件头
+typedef struct BMPFILEHEADER
+{
+	WORD bfType;			//文件类型，默认为"BM"(0x424D)
+	DWORD bfSize;			//文件大小
+	WORD bfReserved1;		//保留，默认为0x0000
+	WORD bfReserved2;		//保留，默认为0x0000
+	DWORD bfOffBits;		//文件头到实际的位图数据的偏移字节数(即前3个部分的长度之和)
+}BMPFILEHEADER;
+
+//位图信息头
+typedef struct BMPINFOHEADER
+{
+	DWORD biSize;			//该结构体长度(40)
+	LONG  biWidth;			//指定图像宽度
+	LONG  biHeight;			//指定图像高度
+	WORD  biPlanes;			//默认为1(使用调色板)
+	WORD  biBitCount;		//指定表示颜色时要用到的位数(有1-黑白图, 4-16色图, 8-256色图, 24-256色图)
+	DWORD biCompression;	//是否经过压缩
+	DWORD biSizeImage;		//图像大小(也就是biWidth x biHeight)
+	LONG  biXPelsPerMeter;	//设备分辨率
+	LONG  biYPelsPerMeter;	//设备分辨率
+	DWORD biClrUsed;		//指本次图像实际用到的颜色数(若为0，则是2的biBitCount次方)
+	DWORD biClrImportant;	//图像中重要的颜色数(若为零，则都重要)
+}BMPINFOHEADER;
+
+//调色板(注意, 若是24bit真彩图，将不会有调色板)
+
+typedef struct tagRGBQUAD
+{
+	BYTE rgbBlue;		//该颜色的蓝色分量
+	BYTE rgbGreen;		//该颜色的绿色分量
+	BYTE rgbRed;		//该颜色的红色分量
+	BYTE rgbReserved;	//保留值
+}RGBQUAD;
+
+//位图类
+class BmpClass
+{
+public:
+	char *file_name;		
+	FILE *fp;
+	DWORD height;
+	DWORD width;
+	DWORD **pix;
+
+private:
+	BMPFILEHEADER bmpFh;	//图像文件头
+	BMPINFOHEADER bmpIh;	//图像信息头
+	RGBQUAD		  *quad;	//调色板指针
+	WORD		  quadSize;	//
+	bool		  fopf;
+
+private:
+	void releaseMemory(void);
+	void ReadHeaderQuad(void);
+
+public:
+	BmpClass(char* fn);
+	~BmpClass();
+	
+	DWORD LoadBmpPointColor(void);
+	void WirteBmpColor(DWORD, FILE*);
+	void LoadBmp2Pix(void);
+	void WritePix2Bmp(char* fn);
+	bool OpenFile(void);
+	bool CloseFile(void);
+	DWORD GetWidth(void);
+	DWORD GetHeight(void);
+};
+
+#endif
